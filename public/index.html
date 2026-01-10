@@ -1,0 +1,1136 @@
+<!-- =========================================================
+     public/index.html ✅ FULL CODE (INTACT + NEW FEATURE)
+     ✅ NEW: Input Font Size + Output Font Size controls
+     ✅ NEW: Two-way Convert toggle + ➡ / ⬅ buttons
+     ✅ FIX: Gujarati typing intact (keeps ZWNJ/ZWJ)
+     ========================================================= -->
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Unicode Gujarati → LMG-Arun + Word + Voice</title>
+
+  <style>
+    @font-face {
+      font-family: "LMG-Arun";
+      src: url("./fonts/LMG-Arun.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: rgba(15, 23, 42, .10);
+      --soft: rgba(15, 23, 42, .04);
+      --primary: #2563eb;
+      --primary-soft: rgba(37, 99, 235, .10);
+      --green: #16a34a;
+      --green-soft: rgba(22, 163, 74, .12);
+      --shadow: 0 18px 44px rgba(15, 23, 42, .08);
+      --radius: 16px;
+
+      /* ✅ default sizes */
+      --inputSize: 16px;
+      --outputSize: 21px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      padding: 18px;
+      background:
+        radial-gradient(1200px 600px at 10% 0%, rgba(37, 99, 235, .08), transparent 60%),
+        radial-gradient(900px 500px at 90% 10%, rgba(22, 163, 74, .06), transparent 55%),
+        linear-gradient(180deg, #fbfcff, var(--bg));
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .top {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      background: #fff;
+    }
+
+    .brand { min-width: 260px; flex: 1 1 320px; display: flex; flex-direction: column; gap: 4px; }
+    .brand h1 { margin: 0; font-size: 16px; font-weight: 900; letter-spacing: .2px; }
+    .brand p { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+
+    .controls {
+      flex: 2 1 560px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--muted);
+      background: var(--soft);
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+      width: 200px;
+      text-align: center;
+    }
+
+    .select {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      padding: 10px 10px;
+      border-radius: 12px;
+      font-weight: 750;
+      font-size: 12px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color .12s ease, box-shadow .12s ease;
+    }
+    .select:focus { border-color: rgba(37, 99, 235, .35); box-shadow: 0 0 0 3px rgba(37, 99, 235, .10); }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 850;
+      font-size: 12px;
+      cursor: pointer;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-width: 108px;
+      white-space: nowrap;
+      transition: transform .10s ease, background .10s ease, border-color .10s ease, box-shadow .10s ease;
+    }
+    .btn:hover { background: #fafbff; box-shadow: 0 6px 18px rgba(15, 23, 42, .06); transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); box-shadow: none; }
+    .btn[disabled] { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .btn.primary { border-color: rgba(37, 99, 235, .30); background: var(--primary-soft); color: #1d4ed8; }
+    .btn.green { border-color: rgba(22, 163, 74, .30); background: var(--green-soft); color: #166534; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 14px;
+      background: rgba(15, 23, 42, .015);
+    }
+    @media (max-width: 920px) { .grid { grid-template-columns: 1fr; } }
+
+    .panel {
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 520px;
+    }
+
+    .panelHead {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15, 23, 42, .02);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .panelHead .label {
+      font-size: 12px;
+      font-weight: 850;
+      color: var(--muted);
+      letter-spacing: .18px;
+      text-transform: uppercase;
+    }
+
+    textarea {
+      flex: 1;
+      border: 0;
+      outline: 0;
+      resize: none;
+      padding: 14px;
+      font-size: var(--inputSize);
+      line-height: 1.75;
+      color: var(--text);
+      background: #fff;
+      overflow: auto;
+    }
+    textarea:focus { box-shadow: inset 0 0 0 2px rgba(37, 99, 235, .14); }
+
+    .unicodeArea { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+
+    .lmgEditor {
+      flex: 1;
+      border: 0;
+      outline: 0;
+      padding: 14px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: "LMG-Arun", system-ui, sans-serif;
+      font-size: var(--outputSize);
+      font-weight: 700;
+      letter-spacing: .2px;
+      line-height: 1.75;
+      background: linear-gradient(180deg, #ffffff, rgba(15, 23, 42, .01));
+    }
+    .lmgEditor:focus { box-shadow: inset 0 0 0 2px rgba(37, 99, 235, .14); }
+
+    .toolmini { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .miniBtn {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-weight: 850;
+      font-size: 12px;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .miniBtn:hover { background: #fafbff; }
+
+    .iconBtn {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-weight: 900;
+      font-size: 12px;
+      cursor: pointer;
+      user-select: none;
+      line-height: 1;
+    }
+    .iconBtn:hover { background: #fafbff; }
+
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      font-weight: 850;
+      font-size: 12px;
+      color: var(--text);
+      cursor: pointer;
+      user-select: none;
+    }
+    .toggle input { width: 16px; height: 16px; }
+
+    .foot {
+      padding: 12px 14px 14px;
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.5;
+      background: #fff;
+      border-top: 1px solid var(--border);
+    }
+
+    .warn {
+      display: none;
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(245, 158, 11, .35);
+      background: rgba(245, 158, 11, .10);
+      color: #7a4b00;
+    }
+    .warn.show { display: block; }
+
+    #input[readonly] { background: rgba(15, 23, 42, .01); }
+  </style>
+
+  <script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+</head>
+
+<body>
+  <div class="app">
+    <div class="top">
+      <div class="brand">
+        <h1>Unicode → LMG-Arun Converter</h1>
+        <p>Type Gujarati OR phonetic English. ✅ Now you can change Input/Output font size + two-way arrows.</p>
+      </div>
+
+      <div class="controls">
+        <span class="pill" id="statusPill">Ready</span>
+
+        <label class="toggle" title="Type English phonetic to Gujarati">
+          <input type="checkbox" id="phoneticToggle" checked />
+          Phonetic Gujarati
+        </label>
+
+        <!-- ✅ NEW: Two-way convert toggle + arrows -->
+        <label class="toggle" title="Enable right/left arrows to convert and restore original">
+          <input type="checkbox" id="twoWayToggle" checked />
+          ↔ Two-way Convert
+        </label>
+        <button class="btn primary" id="btnToLMG" type="button" title="Convert to LMG (Right Arrow)">➡</button>
+        <button class="btn" id="btnToUnicode" type="button" title="Restore original Unicode (Left Arrow)">⬅</button>
+
+        <select class="select" id="langSelect" title="Voice language">
+          <option value="gu-IN">Gujarati (gu-IN)</option>
+          <option value="hi-IN">Hindi (hi-IN)</option>
+          <option value="en-IN">English (en-IN)</option>
+        </select>
+
+        <select class="select" id="fontWeightSelect" title="Output font weight">
+          <option value="400">Weight 400</option>
+          <option value="600">Weight 600</option>
+          <option value="700" selected>Weight 700</option>
+          <option value="800">Weight 800</option>
+          <option value="900">Weight 900</option>
+        </select>
+
+        <span class="pill" style="width:auto; padding:6px 10px;">Input Size</span>
+        <button class="iconBtn" id="inMinus" type="button">A-</button>
+        <select class="select" id="inputSizeSelect" title="Input font size">
+          <option value="14">14</option>
+          <option value="16" selected>16</option>
+          <option value="18">18</option>
+          <option value="20">20</option>
+          <option value="22">22</option>
+          <option value="24">24</option>
+          <option value="26">26</option>
+          <option value="28">28</option>
+        </select>
+        <button class="iconBtn" id="inPlus" type="button">A+</button>
+
+        <span class="pill" style="width:auto; padding:6px 10px;">Output Size</span>
+        <button class="iconBtn" id="outMinus" type="button">A-</button>
+        <select class="select" id="outputSizeSelect" title="Output font size">
+          <option value="16">16</option>
+          <option value="18">18</option>
+          <option value="20">20</option>
+          <option value="21" selected>21</option>
+          <option value="22">22</option>
+          <option value="24">24</option>
+          <option value="26">26</option>
+          <option value="28">28</option>
+          <option value="30">30</option>
+          <option value="32">32</option>
+        </select>
+        <button class="iconBtn" id="outPlus" type="button">A+</button>
+
+        <button class="btn primary" id="btnMic" type="button">🎤 Voice</button>
+        <button class="btn primary" id="btnConvert" type="button">➡ Convert</button>
+        <button class="btn" id="btnPara" type="button">↩ New Paragraph</button>
+        <button class="btn" id="btnPage" type="button">📄 New Page</button>
+
+        <button class="btn" id="btnCopy" type="button">📋 Copy</button>
+        <button class="btn green" id="btnDocx" type="button">⬇️ Word</button>
+        <button class="btn" id="btnClear" type="button">🧹 Clear</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <div class="panelHead">
+          <div class="label">Input (Gujarati Unicode)</div>
+          <div class="pill" style="padding:6px 10px; width:auto;">Type Gujarati / Phonetic</div>
+        </div>
+        <textarea id="input" class="unicodeArea" spellcheck="false"
+          placeholder="Gujarati: હું આજે સ્કૂલ ગયો હતો।  OR  Phonetic: tame kem cho?"></textarea>
+      </div>
+
+      <div class="panel">
+        <div class="panelHead">
+          <div class="label">Output (LMG-Arun)</div>
+          <div class="toolmini">
+            <button class="miniBtn" id="btnBold" type="button"><b>B</b></button>
+            <button class="miniBtn" id="btnItalic" type="button"><i>I</i></button>
+            <span class="pill" style="padding:6px 10px; width:auto;">Select text → Bold/Italic</span>
+          </div>
+        </div>
+
+        <div id="output" class="lmgEditor" contenteditable="true" spellcheck="false"></div>
+      </div>
+    </div>
+
+    <div class="foot">
+      ✅ Ensure <b>LMG-Arun</b> font is installed in Windows.
+      <div class="warn" id="warnBox">⚠️ API error. Open DevTools → Network → Response.</div>
+    </div>
+  </div>
+
+  <script>
+    const CONVERT_URL = "/convert-lmg";
+    const DOCX_URL = "/download-docx";
+    const PAGE_MARK = "[[PAGE_BREAK]]";
+
+    const inputEl = document.getElementById("input");
+    const outputEl = document.getElementById("output");
+    const warnBox = document.getElementById("warnBox");
+    const statusPill = document.getElementById("statusPill");
+
+    const phoneticToggle = document.getElementById("phoneticToggle");
+
+  // ✅ NEW: Two-way convert toggle + arrows
+  const twoWayToggle = document.getElementById("twoWayToggle");
+  const btnToLMG = document.getElementById("btnToLMG");
+  const btnToUnicode = document.getElementById("btnToUnicode");
+
+    const langSelect = document.getElementById("langSelect");
+        const fontWeightSelect = document.getElementById("fontWeightSelect");
+
+    const btnMic = document.getElementById("btnMic");
+    const btnConvert = document.getElementById("btnConvert");
+    const btnCopy = document.getElementById("btnCopy");
+    const btnDocx = document.getElementById("btnDocx");
+    const btnClear = document.getElementById("btnClear");
+    const btnPara = document.getElementById("btnPara");
+    const btnPage = document.getElementById("btnPage");
+    const btnBold = document.getElementById("btnBold");
+    const btnItalic = document.getElementById("btnItalic");
+
+        // ✅ font size controls
+        const inputSizeSelect = document.getElementById("inputSizeSelect");
+        const outputSizeSelect = document.getElementById("outputSizeSelect");
+        const inMinus = document.getElementById("inMinus");
+        const inPlus = document.getElementById("inPlus");
+        const outMinus = document.getElementById("outMinus");
+        const outPlus = document.getElementById("outPlus");
+
+    const cache = new Map();
+    let listening = false;
+    let manualStop = false;
+
+        // ✅ NEW: backup original Unicode before converting
+        let lastOriginalUnicode = "";
+        let hasBackup = false;
+
+    let insertStart = 0, insertEnd = 0;
+    let beforeText = "", afterText = "";
+    let committedFinal = "", currentInterim = "";
+    let lastFinalChunk = "";
+
+    let lastHeardAt = 0;
+    let pauseTimer = null;
+    const PAUSE_MS = 1400;
+
+    function setStatus(text) { statusPill.textContent = text; }
+
+    function setBusy(isBusy) {
+      btnConvert.disabled = isBusy;
+      btnCopy.disabled = isBusy;
+      btnDocx.disabled = isBusy;
+      btnClear.disabled = isBusy;
+      btnPara.disabled = isBusy;
+      btnPage.disabled = isBusy;
+      btnBold.disabled = isBusy;
+      btnItalic.disabled = isBusy;
+      inMinus.disabled = isBusy;
+      inPlus.disabled = isBusy;
+      outMinus.disabled = isBusy;
+      outPlus.disabled = isBusy;
+      inputSizeSelect.disabled = isBusy;
+      outputSizeSelect.disabled = isBusy;
+
+      // ✅ NEW
+      btnToLMG.disabled = isBusy;
+      btnToUnicode.disabled = isBusy;
+      twoWayToggle.disabled = isBusy;
+    }
+
+    function setVoiceLock(isLocked) {
+      inputEl.readOnly = isLocked;
+      inputEl.style.opacity = isLocked ? "0.98" : "1";
+      inputEl.style.cursor = isLocked ? "not-allowed" : "text";
+    }
+
+    function applyOutputWeight() {
+      outputEl.style.fontWeight = fontWeightSelect?.value || "700";
+    }
+        applyOutputWeight();
+
+    fontWeightSelect.addEventListener("change", () => {
+      applyOutputWeight();
+      setStatus("Weight set ✅");
+      setTimeout(() => setStatus(listening ? "Listening..." : "Ready"), 700);
+    });
+
+    function normalizeOutputSpacing(text) {
+      return String(text || "")
+        .replace(/\u00A0/g, " ")
+        .replace(/[\t ]+/g, " ")
+        .replace(/ *\r?\n */g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .replace(/ \,/g, ",")
+        .replace(/ \./g, ".")
+        .replace(/ \:/g, ":")
+        .replace(/ \;/g, ";")
+        .trim();
+    }
+
+        // ✅ Keep Gujarati + keep spaces/newlines + keep punctuation including । ॥
+        // ✅ FIX: Keep ZWJ/ZWNJ \u200C \u200D for Gujarati keyboards
+        function filterGujaratiOnly(value, allowUnfinishedRoman = "") {
+          const safe = String(value || "").replace(/\u00A0/g, " ");
+
+          let temp = safe;
+          let placeholder = "";
+          if (allowUnfinishedRoman) {
+            placeholder = "__ROMAN__" + Math.random().toString(16).slice(2) + "__";
+            temp = temp.replace(allowUnfinishedRoman, placeholder);
+          }
+
+          const allowed =
+            /[\u0A80-\u0AFF\u0AE6-\u0AEF\u200C\u200D0-9a-zA-Z\s\.\,\!\?\:\;\'\"\-\(\)\/\\\[\]\_\*\@\#\&\%\+\=\<\>\|\~\`\^₹$…—–।॥]/g;
+
+          let filtered = (temp.match(allowed) || []).join("");
+
+          if (allowUnfinishedRoman) {
+            filtered = filtered.replace(placeholder, allowUnfinishedRoman);
+          }
+          return filtered;
+    }
+
+    // -----------------------------
+        // ✅ Phonetic transliteration
+    // -----------------------------
+    const VOWELS = [
+      ["aa", "આ"], ["ii", "ઈ"], ["ee", "ઈ"], ["uu", "ઉ"], ["oo", "ઉ"],
+      ["ai", "ઐ"], ["au", "ઔ"],
+      ["a", "અ"], ["i", "ઇ"], ["e", "એ"], ["u", "ઉ"], ["o", "ઓ"]
+    ];
+
+    const CONS = [
+      ["ksh", "ક્ષ"], ["gy", "જ્ઞ"],
+      ["kh", "ખ"], ["gh", "ઘ"], ["chh", "છ"], ["ch", "ચ"],
+      ["jh", "ઝ"], ["th", "થ"], ["dh", "ધ"], ["ph", "ફ"], ["bh", "ભ"],
+      ["sh", "શ"], ["ng", "ઙ"], ["gn", "ઞ"],
+      ["k", "ક"], ["g", "ગ"], ["c", "ચ"], ["j", "જ"], ["t", "ત"], ["d", "દ"],
+      ["n", "ન"], ["p", "પ"], ["b", "બ"], ["m", "મ"], ["y", "ય"], ["r", "ર"],
+      ["l", "લ"], ["v", "વ"], ["w", "વ"], ["s", "સ"], ["h", "હ"],
+      ["z", "ઝ"], ["f", "ફ"]
+    ];
+
+    const MATRA = {
+      "a": "", "aa": "ા", "i": "િ", "ii": "ી", "ee": "ી",
+      "u": "ુ", "uu": "ૂ", "oo": "ૂ", "e": "ે", "ai": "ૈ", "o": "ો", "au": "ૌ"
+    };
+
+        function isLetter(ch) { return /^[a-z]$/i.test(ch); }
+
+    function transliterateToken(token) {
+      const raw = token.toLowerCase();
+      if (!raw) return token;
+      if (/[\u0A80-\u0AFF]/.test(token)) return token;
+      if (!/[a-z]/i.test(raw)) return token;
+
+      let out = "";
+      let i = 0;
+
+      function matchList(list) {
+        for (const [k, v] of list) {
+          if (raw.startsWith(k, i)) return { k, v };
+        }
+        return null;
+      }
+
+      while (i < raw.length) {
+        if (!isLetter(raw[i])) { out += raw[i]; i++; continue; }
+
+        const cm = matchList(CONS);
+        if (cm) {
+          i += cm.k.length;
+
+          const vm = matchList(VOWELS);
+          if (vm) {
+            const vowelKey = vm.k;
+            i += vm.k.length;
+            out += cm.v + (MATRA[vowelKey] ?? "");
+          } else {
+            out += cm.v;
+          }
+          continue;
+        }
+
+        const vm = matchList(VOWELS);
+        if (vm) { i += vm.k.length; out += vm.v; continue; }
+
+        out += raw[i];
+        i++;
+      }
+
+      return out;
+    }
+
+        function phoneticGujarati(text) {
+          return String(text || "")
+            .split(/(\s+)/)
+            .map(part => {
+              if (/^\s+$/.test(part)) return part;
+              return part.split(/([.,!?;:"'()\/\\\[\]-]+)/).map(seg => {
+                if (!seg) return "";
+                if (/^[.,!?;:"'()\/\\\[\]-]+$/.test(seg)) return seg;
+                return transliterateToken(seg);
+              }).join("");
+            })
+            .join("");
+        }
+
+        // ✅ Live typewriter behavior (convert only completed roman words)
+        let inputGuard = false;
+
+        function phoneticGujaratiLive(text, caretPos) {
+      const s = String(text || "");
+              const pos = Math.max(0, Math.min(caretPos ?? s.length, s.length));
+
+              const before = s.slice(0, pos);
+              const after = s.slice(pos);
+
+              const lastChar = before.slice(-1);
+              const boundary = /[\s\n\r\t\.\,\!\?\:\;\)\]\}\/\\\-]/.test(lastChar);
+
+              const match = before.match(/[A-Za-z]+$/);
+              const unfinishedRoman = (!boundary && match) ? match[0] : "";
+
+              let convertPart = before;
+              if (unfinishedRoman) convertPart = before.slice(0, -unfinishedRoman.length);
+
+              const converted = phoneticGujarati(convertPart);
+
+              const rebuilt = converted + unfinishedRoman + after;
+              const newCaret = converted.length + unfinishedRoman.length;
+
+              return { rebuilt, newCaret, unfinishedRoman };
+            }
+
+            // -----------------------------
+            // ✅ Font Size handlers
+            // -----------------------------
+            const MIN_IN = 12, MAX_IN = 40;
+            const MIN_OUT = 14, MAX_OUT = 60;
+
+            function setCssVar(name, px) {
+              document.documentElement.style.setProperty(name, px + "px");
+            }
+
+            function applyInputSize(px) {
+              const v = Math.max(MIN_IN, Math.min(MAX_IN, Number(px) || 16));
+              setCssVar("--inputSize", v);
+              inputSizeSelect.value = String(v);
+            }
+
+            function applyOutputSize(px) {
+              const v = Math.max(MIN_OUT, Math.min(MAX_OUT, Number(px) || 21));
+              setCssVar("--outputSize", v);
+              outputSizeSelect.value = String(v);
+            }
+
+            function getCurrentVarPx(varName, fallback) {
+              const val = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+              const num = parseInt(val.replace("px", ""), 10);
+              return Number.isFinite(num) ? num : fallback;
+    }
+
+        inputSizeSelect.addEventListener("change", () => {
+          applyInputSize(inputSizeSelect.value);
+          setStatus("Input size ✅");
+          setTimeout(() => setStatus(listening ? "Listening..." : "Ready"), 700);
+        });
+
+        outputSizeSelect.addEventListener("change", () => {
+          applyOutputSize(outputSizeSelect.value);
+          setStatus("Output size ✅");
+          setTimeout(() => setStatus(listening ? "Listening..." : "Ready"), 700);
+        });
+
+        inMinus.addEventListener("click", () => {
+          const cur = getCurrentVarPx("--inputSize", 16);
+          applyInputSize(cur - 2);
+          setStatus("Input size ✅");
+          setTimeout(() => setStatus(listening ? "Listening..." : "Ready"), 700);
+        });
+
+        inPlus.addEventListener("click", () => {
+          const cur = getCurrentVarPx("--inputSize", 16);
+          applyInputSize(cur + 2);
+          setStatus("Input size ✅");
+          setTimeout(() => setStatus(listening ? "Listening..." : "Ready"), 700);
+        });
+
+        outMinus.addEventListener("click", () => {
+          const cur = getCurrentVarPx("--outputSize", 21);
+          applyOutputSize(cur - 2);
+          setStatus("Output size ✅");
+          setTimeout(() => setStatus(listening ? "Listening..." : "Ready"), 700);
+        });
+
+        outPlus.addEventListener("click", () => {
+          const cur = getCurrentVarPx("--outputSize", 21);
+          applyOutputSize(cur + 2);
+          setStatus("Output size ✅");
+          setTimeout(() => setStatus(listening ? "Listening..." : "Ready"), 700);
+        });
+
+        applyInputSize(inputSizeSelect.value || 16);
+        applyOutputSize(outputSizeSelect.value || 21);
+
+        // -----------------------------
+        // ✅ Two-way UI sync
+        // -----------------------------
+        function syncTwoWayUI() {
+          const on = !!twoWayToggle?.checked;
+          btnToLMG.style.display = on ? "inline-flex" : "none";
+          btnToUnicode.style.display = on ? "inline-flex" : "none";
+          btnToUnicode.disabled = !on || !hasBackup;
+        }
+        syncTwoWayUI();
+
+        twoWayToggle.addEventListener("change", () => {
+          syncTwoWayUI();
+          setStatus("Two-way " + (twoWayToggle.checked ? "ON ✅" : "OFF"));
+          setTimeout(() => setStatus(listening ? "Listening..." : "Ready"), 700);
+        });
+
+    // -----------------------------
+    // Bold/Italic output
+    // -----------------------------
+    function focusOutput() { outputEl.focus(); }
+    btnBold.addEventListener("click", () => { focusOutput(); document.execCommand("bold"); });
+    btnItalic.addEventListener("click", () => { focusOutput(); document.execCommand("italic"); });
+
+        // Paragraph/Page insert
+    function insertAtCursor(textarea, insertText) {
+      const start = textarea.selectionStart ?? textarea.value.length;
+      const end = textarea.selectionEnd ?? textarea.value.length;
+
+      const before = textarea.value.slice(0, start);
+      const after = textarea.value.slice(end);
+
+      textarea.value = before + insertText + after;
+
+      const newPos = (before + insertText).length;
+      textarea.focus();
+      textarea.setSelectionRange(newPos, newPos);
+
+      if (listening) anchorInsertPoint();
+    }
+
+    btnPara.addEventListener("click", () => {
+      insertAtCursor(inputEl, "\n\n");
+      setStatus("New paragraph ✅");
+      setTimeout(() => setStatus(listening ? "Listening..." : "Ready"), 700);
+    });
+
+    btnPage.addEventListener("click", () => {
+      const prefix = inputEl.value.endsWith("\n") ? "" : "\n";
+      insertAtCursor(inputEl, `${prefix}${PAGE_MARK}\n`);
+      setStatus("New page ✅");
+      setTimeout(() => setStatus(listening ? "Listening..." : "Ready"), 700);
+    });
+
+        // ✅ INPUT HANDLER (Gujarati typing intact + phonetic word-by-word)
+    inputEl.addEventListener("input", () => {
+      if (inputGuard) return;
+      inputGuard = true;
+
+      const old = inputEl.value;
+      const caret = inputEl.selectionStart ?? old.length;
+
+      let next = old;
+      let newCaret = caret;
+      let unfinishedRoman = "";
+
+      if (phoneticToggle.checked) {
+        const live = phoneticGujaratiLive(next, caret);
+        next = live.rebuilt;
+        newCaret = live.newCaret;
+        unfinishedRoman = live.unfinishedRoman;
+
+        next = filterGujaratiOnly(next, unfinishedRoman);
+      } else {
+        // ✅ phonetic OFF: keep exactly as typed (just normalize NBSP)
+        next = String(next || "").replace(/\u00A0/g, " ");
+      }
+
+      if (old !== next) {
+        inputEl.value = next;
+        inputEl.setSelectionRange(Math.min(newCaret, next.length), Math.min(newCaret, next.length));
+      }
+
+      inputGuard = false;
+    });
+
+        // Convert API
+    async function convertText(unicodeText) {
+      const txt = (unicodeText || "");
+      if (!txt.trim()) return "";
+      if (cache.has(txt)) return cache.get(txt);
+
+      const res = await fetch(CONVERT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: txt }),
+      });
+
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(`Convert failed: ${res.status} ${t}`.trim());
+      }
+
+      const out = (await res.text()).replace(/\r?\n$/, "");
+      cache.set(txt, out);
+      return out;
+    }
+
+    async function doConvert() {
+      const src = inputEl.value || "";
+      if (!src.trim()) {
+        outputEl.innerHTML = "";
+        setStatus("Ready");
+        return;
+      }
+
+      // ✅ backup original input before converting (for left arrow restore)
+      if (twoWayToggle?.checked) {
+        lastOriginalUnicode = src;
+        hasBackup = true;
+        syncTwoWayUI();
+      }
+
+      try {
+        warnBox.classList.remove("show");
+        setBusy(true);
+        setStatus("Converting...");
+
+        const converted = await convertText(src);
+        const cleaned = normalizeOutputSpacing(converted);
+
+        outputEl.textContent = cleaned;
+        applyOutputWeight();
+
+        setStatus("Done ✅");
+        setTimeout(() => setStatus(listening ? "Listening..." : "Ready"), 900);
+      } catch (e) {
+        warnBox.classList.add("show");
+        console.error("Convert error:", e);
+        setStatus("Convert failed");
+      } finally {
+        setBusy(false);
+        syncTwoWayUI();
+      }
+    }
+
+    btnConvert.addEventListener("click", doConvert);
+
+        // ✅ Right arrow: Convert to LMG
+        btnToLMG.addEventListener("click", async () => {
+          await doConvert();
+        });
+
+        // ✅ Left arrow: Restore original Unicode back to left input
+        btnToUnicode.addEventListener("click", () => {
+          if (!twoWayToggle.checked) return;
+          if (!hasBackup) {
+            setStatus("No backup yet");
+            setTimeout(() => setStatus(listening ? "Listening..." : "Ready"), 700);
+            return;
+          }
+
+          inputGuard = true; // prevent phonetic handler from modifying restore
+          inputEl.value = lastOriginalUnicode;
+          inputGuard = false;
+
+          inputEl.focus();
+          inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
+
+          setStatus("Restored ✅");
+          setTimeout(() => setStatus(listening ? "Listening..." : "Ready"), 900);
+
+          syncTwoWayUI();
+        });
+
+    // Copy plain text
+    btnCopy.addEventListener("click", async () => {
+      const txt = (outputEl.innerText || "").trim();
+      if (!txt) return;
+
+      try {
+        await navigator.clipboard.writeText(txt);
+        setStatus("Copied ✅");
+      } catch {
+        const range = document.createRange();
+        range.selectNodeContents(outputEl);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        document.execCommand("copy");
+        sel.removeAllRanges();
+        setStatus("Copied ✅");
+      }
+      setTimeout(() => setStatus(listening ? "Listening..." : "Ready"), 700);
+    });
+
+    btnClear.addEventListener("click", () => {
+      inputEl.value = "";
+      outputEl.innerHTML = "";
+      warnBox.classList.remove("show");
+
+      // ✅ reset backup
+      lastOriginalUnicode = "";
+      hasBackup = false;
+      syncTwoWayUI();
+
+      setStatus("Ready");
+      setVoiceLock(listening);
+      inputEl.focus();
+      if (listening) anchorInsertPoint();
+    });
+
+    // Download docx with formatting
+    btnDocx.addEventListener("click", async () => {
+      try {
+        warnBox.classList.remove("show");
+        setStatus("Preparing Word...");
+        btnDocx.disabled = true;
+
+        if (!(outputEl.innerText || "").trim()) await doConvert();
+
+        const lmgText = (outputEl.innerText || "").trim();
+        const lmgHtml = (outputEl.innerHTML || "").trim();
+        if (!lmgText) { alert("Please click Convert first."); return; }
+
+        const res = await fetch(DOCX_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lmgText,
+            lmgHtml,
+            weight: fontWeightSelect?.value || "700",
+          }),
+        });
+
+        if (!res.ok) {
+          const t = await res.text().catch(() => "");
+          throw new Error(`DOCX failed: ${res.status} ${t}`.trim());
+        }
+
+        const blob = await res.blob();
+        saveAs(blob, "LMG-Arun-Formatted.docx");
+
+        setStatus("Downloaded ✅");
+        setTimeout(() => setStatus(listening ? "Listening..." : "Ready"), 900);
+      } catch (e) {
+        warnBox.classList.add("show");
+        console.error("DOCX error:", e);
+        setStatus("Word failed");
+        alert("Download failed. Check DevTools > Network > Response.");
+      } finally {
+        btnDocx.disabled = false;
+      }
+    });
+
+    // -----------------------------
+        // Voice (same as your code)
+    // -----------------------------
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+
+    function anchorInsertPoint() {
+      insertStart = inputEl.selectionStart ?? inputEl.value.length;
+      insertEnd = inputEl.selectionEnd ?? insertStart;
+      const v = inputEl.value || "";
+      beforeText = v.slice(0, insertStart);
+      afterText = v.slice(insertEnd);
+
+      committedFinal = "";
+      currentInterim = "";
+      lastFinalChunk = "";
+    }
+
+    function applyVoiceTextToInput() {
+      const mid = (committedFinal + (currentInterim ? currentInterim : "")).trim();
+      const finalText = filterGujaratiOnly(beforeText + (mid ? mid : "") + afterText);
+      inputEl.value = finalText;
+
+      const newCursor = Math.min(finalText.length, (beforeText + (mid ? mid : "")).length);
+      inputEl.focus();
+      inputEl.setSelectionRange(newCursor, newCursor);
+    }
+
+    function startPauseWatcher() {
+      stopPauseWatcher();
+      pauseTimer = setInterval(() => {
+        if (!listening) return;
+        const now = Date.now();
+        if (lastHeardAt && (now - lastHeardAt) > PAUSE_MS) setStatus("Paused (still listening)...");
+        else setStatus("Listening...");
+      }, 250);
+    }
+
+    function stopPauseWatcher() {
+      if (pauseTimer) {
+        clearInterval(pauseTimer);
+        pauseTimer = null;
+      }
+    }
+
+    function createRecognizer() {
+      if (!SR) return null;
+      const r = new SR();
+      r.continuous = true;
+      r.interimResults = true;
+      r.lang = langSelect.value || "gu-IN";
+      return r;
+    }
+
+    langSelect.addEventListener("change", () => {
+      if (recognition && listening) {
+        manualStop = false;
+        try { recognition.stop(); } catch { }
+      }
+    });
+
+    function dedupeAppend(existing, incoming) {
+      const a = String(existing || "");
+      let b = String(incoming || "").trim();
+      if (!b) return a;
+
+      if (lastFinalChunk && b.startsWith(lastFinalChunk)) {
+        b = b.slice(lastFinalChunk.length).trim();
+      }
+
+      if (b && a.endsWith(b)) return a;
+
+      lastFinalChunk = String(incoming || "").trim();
+      return (a + " " + b).replace(/\s+/g, " ").trim();
+    }
+
+    btnMic.addEventListener("click", () => {
+      if (!SR) {
+        alert("Voice input is not supported in this browser. Use Chrome/Edge.");
+        return;
+      }
+
+      if (listening && recognition) {
+        manualStop = true;
+        try { recognition.stop(); } catch { }
+        return;
+      }
+
+      manualStop = false;
+      listening = true;
+      btnMic.textContent = "⏹ Stop";
+      setVoiceLock(true);
+      warnBox.classList.remove("show");
+
+      anchorInsertPoint();
+
+      recognition = createRecognizer();
+      if (!recognition) return;
+
+      lastHeardAt = Date.now();
+      setStatus("Listening...");
+      startPauseWatcher();
+
+      function attachHandlers(r) {
+        r.onresult = (event) => {
+          lastHeardAt = Date.now();
+
+          let newFinal = "";
+          let newInterim = "";
+
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const res = event.results[i];
+            const t = res?.[0]?.transcript || "";
+            if (res.isFinal) newFinal += t + " ";
+            else newInterim += t;
+          }
+
+          newFinal = filterGujaratiOnly(newFinal);
+          newInterim = filterGujaratiOnly(newInterim);
+
+          if (newFinal.trim()) {
+            committedFinal = dedupeAppend(committedFinal, newFinal);
+            currentInterim = "";
+          } else {
+            currentInterim = newInterim;
+          }
+
+          applyVoiceTextToInput();
+        };
+
+        r.onerror = (e) => {
+          console.error("Voice error:", e);
+          stopPauseWatcher();
+          listening = false;
+          btnMic.textContent = "🎤 Voice";
+          setVoiceLock(false);
+          setStatus("Voice error");
+          setTimeout(() => setStatus("Ready"), 900);
+        };
+
+        r.onend = () => {
+          stopPauseWatcher();
+
+          if (listening && !manualStop) {
+            try {
+              recognition = createRecognizer();
+              attachHandlers(recognition);
+              lastHeardAt = Date.now();
+              setStatus("Listening...");
+              startPauseWatcher();
+              recognition.start();
+            } catch { }
+            return;
+          }
+
+          listening = false;
+          btnMic.textContent = "🎤 Voice";
+          setVoiceLock(false);
+          setStatus("Ready");
+        };
+      }
+
+      attachHandlers(recognition);
+      try { recognition.start(); } catch { }
+    });
+
+    // Demo
+        inputEl.value = "હું આજે સ્કૂલ ગયો હતો।\n\nPhonetic: tame kem cho?";
+    inputEl.dispatchEvent(new Event("input"));
+  </script>
+</body>
+</html>
